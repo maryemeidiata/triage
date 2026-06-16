@@ -1,0 +1,4 @@
+name: hospital_data
+type: duckdb
+options:
+  filename: ":memory:"
