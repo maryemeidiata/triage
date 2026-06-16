@@ -1,5 +1,5 @@
 ---
-title: Hospital Performance Watchlist
+title: Triage — Hospital Performance Watchlist
 ---
 
 ```sql all_states
@@ -47,7 +47,7 @@ Hospitals flagged as outliers on **both cost per discharge and readmission rate*
 
 ## Cost vs readmission map
 
-Each dot is one hospital. Hospitals in the **top-right quadrant** are above their peer average on both cost and readmissions — those are the highest-priority targets. The dashed lines represent the peer group average (zero = exactly average).
+Each dot is one hospital. Hospitals in the **top-right quadrant** are above their peer average on both cost and readmissions — those are the highest-priority targets. Zero on both axes = exactly at peer average.
 
 ```sql scatter_data
 SELECT
@@ -64,15 +64,17 @@ WHERE readmission_pct_above_peer BETWEEN -60 AND 60
   x=cost_pct_above_peer
   y=readmission_pct_above_peer
   series=priority_flag
-  colorPalette={['#E24B4A', '#EF9F27', '#4ade80']}
-  xAxisTitle="Cost % above peer average (capped at 400% for readability)"
-  yAxisTitle="Readmission rate % above peer average"
+  colorPalette={['#E24B4A', '#EF9F27', '#c8c8c8']}
+  xAxisTitle="Cost % above peer average (capped at 400%)"
+  yAxisTitle="Readmission % above peer average"
   tooltipTitle=hospital_name
 />
 
 ---
 
 ## Top hospitals by cost above peer average
+
+Excludes extreme outliers to keep the chart readable. Bars show how far each hospital's cost per discharge sits above its peer group average.
 
 ```sql top_cost
 SELECT
@@ -81,6 +83,7 @@ SELECT
   priority_flag
 FROM ${filtered_watchlist}
 WHERE priority_flag IN ('High Priority', 'Monitor')
+  AND cost_pct_above_peer < 500
 ORDER BY cost_pct_above_peer DESC
 LIMIT 15
 ```
@@ -99,7 +102,7 @@ LIMIT 15
 
 ## Flagged hospitals — ranked by severity
 
-Click any row to see the full condition-level breakdown for that hospital.
+Click any row to see the condition-level breakdown for that hospital.
 
 ```sql flagged
 SELECT
@@ -107,8 +110,8 @@ SELECT
   state,
   size_bucket,
   num_beds,
-  cost_pct_above_peer,
-  readmission_pct_above_peer,
+  ROUND(cost_pct_above_peer, 0) || '%' AS cost_vs_peers,
+  ROUND(readmission_pct_above_peer, 1) || '%' AS readmission_vs_peers,
   finding,
   composite_score,
   priority_flag,
@@ -130,8 +133,8 @@ LIMIT 200
   <Column id=state title="State" />
   <Column id=size_bucket title="Size" />
   <Column id=num_beds title="Beds" fmt="num0" />
-  <Column id=cost_pct_above_peer title="Cost vs peers %" fmt="0.0" />
-  <Column id=readmission_pct_above_peer title="Readmission vs peers %" fmt="0.0" />
+  <Column id=cost_vs_peers title="Cost vs peers" />
+  <Column id=readmission_vs_peers title="Readmission vs peers" />
   <Column id=finding title="Finding" wrap=true />
   <Column id=priority_flag title="Flag" />
 </DataTable>
