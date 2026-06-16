@@ -2,6 +2,10 @@
 title: Hospital Drill-Down
 ---
 
+```sql all_ccns
+SELECT ccn FROM hospital_data.watchlist
+```
+
 ```sql hospital_info
 SELECT * FROM hospital_data.watchlist
 WHERE ccn = '${params.ccn}'
