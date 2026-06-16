@@ -96,7 +96,8 @@ scored AS (
                 (j.avg_excess_readmission_ratio - p.peer_avg_excess_readmission)
                     / NULLIF(p.peer_avg_excess_readmission, 0)
             ) / 2 * 100,
-        2) AS composite_score
+        2) AS composite_score,
+        ROUND(j.cost_per_discharge / NULLIF(p.peer_avg_cost_per_discharge, 0), 1) AS cost_multiplier
     FROM joined j
     JOIN peer_stats p ON j.state = p.state AND j.size_bucket = p.size_bucket
 ),
@@ -124,6 +125,7 @@ SELECT
     ROUND(peer_avg_excess_readmission, 4)  AS peer_avg_excess_readmission,
     readmission_pct_above_peer,
     composite_score,
+    cost_multiplier,
     peer_group_size,
     condition_count,
     ROUND(composite_percentile_rank * 100, 1) AS composite_percentile,
@@ -131,6 +133,15 @@ SELECT
         WHEN composite_percentile_rank >= 0.75 THEN 'High Priority'
         WHEN composite_percentile_rank >= 0.50 THEN 'Monitor'
         ELSE 'OK'
-    END AS priority_flag
+    END AS priority_flag,
+    CASE
+        WHEN cost_pct_above_peer > 0 AND readmission_pct_above_peer > 0
+            THEN 'Costs ' || CAST(ROUND(cost_multiplier, 1) AS VARCHAR) || '× more per patient than peers; readmissions also above average'
+        WHEN cost_pct_above_peer > 0 AND readmission_pct_above_peer <= 0
+            THEN 'Costs ' || CAST(ROUND(cost_multiplier, 1) AS VARCHAR) || '× more per patient than peers; readmissions within normal range'
+        WHEN cost_pct_above_peer <= 0 AND readmission_pct_above_peer > 0
+            THEN 'Readmissions ' || CAST(ROUND(readmission_pct_above_peer, 0) AS VARCHAR) || '% above peers; cost within normal range'
+        ELSE 'Performing within normal range on both metrics'
+    END AS finding
 FROM ranked
 ORDER BY composite_score DESC
