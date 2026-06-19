@@ -64,7 +64,7 @@ WHERE readmission_pct_above_peer BETWEEN -60 AND 60
   x=cost_pct_above_peer
   y=readmission_pct_above_peer
   series=priority_flag
-  colorPalette={['#E24B4A', '#EF9F27', '#c8c8c8']}
+  colorPalette={['#E24B4A', '#EF9F27', '#5BA8A0']}
   xAxisTitle="Cost % above peer average (capped at 400%)"
   yAxisTitle="Readmission % above peer average"
   tooltipTitle=hospital_name
